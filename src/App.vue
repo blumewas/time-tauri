@@ -1,11 +1,26 @@
-<template>  
+<template>
   <main>
-    <mite-projects :customer-projects="customerProjects" />
+    <mite-projects :customer-projects="staredCustomerProjects" @star="starProject" @unstar="unstarProject"
+      :stared="true" />
+
+    <hr />
+
+    <mite-projects :customer-projects="customerProjects" @star="starProject" @unstar="unstarProject" :stared="false" v-show="!hideUnstared" />
   </main>
 
   <div id="settings">
     <div v-show="showSettings">
-      <input placeholder="Api Key..." v-model="apiKey" @keydown.enter="saveApiKey" @blur="saveApiKey" />
+      <div>
+        <label>
+          <input type="checkbox" v-model="hideUnstared" />
+          Einträge ohne Stern ausblenden?
+        </label>
+      </div>
+
+      <div>
+      <input placeholder="Api Key..." type="text" v-model="apiKey" @keydown.enter="saveApiKey" @blur="saveApiKey" />
+
+      </div>
     </div>
 
     <cog-icon class="cog" @click="showSettings = !showSettings" />
@@ -22,71 +37,69 @@
 
 <script setup>
 import { invoke } from '@tauri-apps/api/tauri';
-import {appDir} from '@tauri-apps/api/path';
-import {writeFile, readTextFile} from '@tauri-apps/api/fs';
 
 import { provide, ref } from 'vue';
 import { CogIcon } from '@heroicons/vue/outline';
 
 import MiteProjects from './components/mite-projects.vue';
+import { AppSettings } from './composeables/app-settings';
 
-
-const defaultSettings = {
-  apiKey: null,    
+const appSettings = new AppSettings({
+  apiKey: null,
   stared: [],
-};
+});
 
 const showSettings = ref(false);
-const staredProjects = ref([]);
+const hideUnstared = ref(false);
+
+const stared = ref([]);
 const apiKey = ref('loading');
 
 provide('apiKey', apiKey);
 
-appDir().then(path => {
-  readTextFile(`${path}settings.txt`)
-    .then((contents) => {
-      const loaded = JSON.parse(contents);
-
-      staredProjects.value = loaded.stared;
-      apiKey.value = loaded.apiKey;
-
-      loadProjects();
-      loadServices();
-    })
-    .catch(() => {
-      // try to write default settings here
-      const settingsJson = JSON.stringify(defaultSettings);
-
-      writeFile({contents: settingsJson, path: `${path}settings.txt`});
-    });
+appSettings.load().then((settings) => {
+  stared.value = settings.stared;
+  apiKey.value = settings.apiKey;
+}).then(() => {
+  loadProjects();
+  loadServices();
 });
 
 function saveApiKey() {
   loadProjects();
   loadServices();
 
-  appDir().then(path => {
-    const settingsJson = JSON.stringify({
-      apiKey: apiKey.value,
-      stared: staredProjects.value,
-    });
-
-    writeFile({contents: settingsJson, path: `${path}settings.txt`});
-  });
+  appSettings.apiKey = apiKey.value;
+  appSettings.save();
 }
 
-const customerProjects = ref();
+function starProject(projectId) {
+  stared.value.push(projectId);
+
+  appSettings.stared = stared.value;
+  appSettings.save();
+  loadProjects();
+}
+
+function unstarProject(projectId) {
+  stared.value = stared.value.filter(val => val !== projectId);
+
+  appSettings.stared = stared.value;
+  appSettings.save();
+  loadProjects();
+}
+
+// provide services
 const services = ref();
 
 provide('services', services);
-
 function loadServices() {
   // load services from mite via our rust backend
   invoke('get_services', { apiKey: apiKey.value }).then((message) => {
     const data = JSON.parse(message);
 
     services.value = data.map((value) => {
-      const {service} = value;
+      const { service } = value;
       return {
         id: service.id,
         name: service.name,
@@ -95,29 +108,57 @@ function loadServices() {
   });
 }
 
+const customerProjects = ref();
+const staredCustomerProjects = ref();
+
+function groupProjects(projects) {
+  const staredCustomers = {};
+  const customers = {};
+
+  projects.forEach((value) => {
+    const { project } = value;
+
+    if (project.archived) {
+      return;
+    }
+
+    const { id, customer_name, name } = project;
+
+    if (stared.value.includes(id)) {
+
+      if (!staredCustomers[customer_name]) {
+        staredCustomers[customer_name] = [];
+      }
+
+      staredCustomers[customer_name].push({
+        id,
+        name,
+      });
+
+      console.log(staredCustomers);
+      return;
+    }
+
+    if (!customers[customer_name]) {
+      customers[customer_name] = [];
+    }
+
+    customers[customer_name].push({
+      id,
+      name,
+    });
+  });
+
+  customerProjects.value = customers;
+  staredCustomerProjects.value = staredCustomers;
+}
+
 function loadProjects() {
   // load the projects from mite via our rust backend
   invoke('get_projects', { apiKey: apiKey.value }).then((message) => {
     const data = JSON.parse(message);
 
-    customerProjects.value =  data.reduce((customerProjectsMap, value) => {
-      const { project } = value;
-      if (project.archived) {
-        return customerProjectsMap;
-      }
-
-      if (!customerProjectsMap[project.customer_name]) {
-        customerProjectsMap[project.customer_name] = [];
-      }
-
-      customerProjectsMap[project.customer_name].push({
-        id: project.id,
-        name: project.name,
-      });
-
-      return customerProjectsMap;
-    }, {});
-
+    groupProjects(data);
   });
 }
 
@@ -157,7 +198,7 @@ main {
 #notifications {
   position: absolute;
   top: 0;
-  left:0;
+  left: 0;
   right: 0;
   bottom: 0;
   z-index: 100;
@@ -185,6 +226,8 @@ main {
   right: 0;
   bottom: 0;
   margin: 0.5rem;
+  padding: 0.5rem;
+  background-color: #fff;
 }
 
 .cog {
@@ -198,12 +241,16 @@ main {
   color: #ccc;
 }
 
-input {
+input[type="text"] {
   border: none;
   border-bottom: 1px solid #ccc;
   outline: 0;
   padding: 0.25rem;
   font-size: 12px;
-  -webkit-appearance: none;
+  width: 100%;
+}
+
+hr {
+  margin: 2rem 0;
 }
 </style>

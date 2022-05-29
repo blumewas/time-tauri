@@ -81,7 +81,7 @@ function saveEntry() {
 }
 </script>
 
-<style>
+<style scoped>
 .create-wrapper {
   display: inline-flex;
   align-items: center;
