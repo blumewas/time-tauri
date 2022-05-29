@@ -2,7 +2,7 @@
   <span class="create-wrapper">
 
     <select v-model="serviceId" v-show="step === 1" @change="next" ref="step1">
-      <option disabled value="">Service wählen</option>
+      <option selected disabled :value="null">Service wählen...</option>
       <option v-for="service in services" :value="service.id" :key="service.id">
         {{ service.name }}
       </option>
@@ -27,7 +27,7 @@ const emit = defineEmits(['close'])
 const step = ref(1);
 
 const note = ref('');
-const serviceId = ref();
+const serviceId = ref(null);
 const minutes = ref(null);
 
 const services = inject('services');
