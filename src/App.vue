@@ -1,15 +1,24 @@
 <template>
+  <!-- TODO add filter with search -->
+  <!-- TODO display current time with stop button -->
   <main>
     <mite-projects :customer-projects="staredCustomerProjects" @star="starProject" @unstar="unstarProject"
       :stared="true" />
 
-    <hr />
+    <hr v-show="!hideUnstared" />
 
     <mite-projects :customer-projects="customerProjects" @star="starProject" @unstar="unstarProject" :stared="false" v-show="!hideUnstared" />
+
+  <!-- TODO to top buton -->
   </main>
 
   <div id="settings">
+    <!-- TODO extra component -->
+    <!-- TODO add mite-app name -->
+    <!-- TODO better background/highlight -->
     <div v-show="showSettings">
+  
+      <!-- TODO move to filter -->
       <div>
         <label>
           <input type="checkbox" v-model="hideUnstared" />
@@ -18,8 +27,7 @@
       </div>
 
       <div>
-      <input placeholder="Api Key..." type="text" v-model="apiKey" @keydown.enter="saveApiKey" @blur="saveApiKey" />
-
+        <input placeholder="Api Key..." type="text" v-model="apiKey" @keydown.enter="saveApiKey" @blur="saveApiKey" />
       </div>
     </div>
 

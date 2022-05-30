@@ -2,6 +2,7 @@ import {appDir} from '@tauri-apps/api/path';
 import {writeFile, readTextFile} from '@tauri-apps/api/fs';
 
 
+// TODO add set/get method that directly writes settings to config
 export class AppSettings {
 
   constructor(defaults = {}) {
