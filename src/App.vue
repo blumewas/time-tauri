@@ -2,37 +2,38 @@
   <!-- TODO add filter with search -->
   <!-- TODO display current time with stop button -->
   <main>
-    <mite-projects :customer-projects="staredCustomerProjects" @star="starProject" @unstar="unstarProject"
-      :stared="true" />
+    <header ref="header">
+      <h2 @click="showFilter = !showFilter">Filter</h2>
+      
+      <div v-show="showFilter">
+        <div>
+          <input class="search" placeholder="Suche..." type="text" v-model="search" @input="filter" />
+        </div>
 
-    <hr v-show="!hideUnstared" />
-
-    <mite-projects :customer-projects="customerProjects" @star="starProject" @unstar="unstarProject" :stared="false" v-show="!hideUnstared" />
-
-  <!-- TODO to top buton -->
-  </main>
-
-  <div id="settings">
-    <!-- TODO extra component -->
-    <!-- TODO add mite-app name -->
-    <!-- TODO better background/highlight -->
-    <div v-show="showSettings">
-  
-      <!-- TODO move to filter -->
-      <div>
-        <label>
-          <input type="checkbox" v-model="hideUnstared" />
-          Einträge ohne Stern ausblenden?
-        </label>
+        <div>
+          <label>
+            <input type="checkbox" v-model="hideUnstared" />
+            Einträge ohne Stern ausblenden?
+          </label>
+        </div>
       </div>
+    </header>
 
-      <div>
-        <input placeholder="Api Key..." type="text" v-model="apiKey" @keydown.enter="saveApiKey" @blur="saveApiKey" />
-      </div>
+    <div v-if="hasValidSettings">
+      <mite-projects :customer-projects="staredCustomerProjects" @star="starProject" @unstar="unstarProject"
+        :stared="true" />
+
+      <hr v-show="!hideUnstared" />
+
+      <mite-projects :customer-projects="customerProjects" @star="starProject" @unstar="unstarProject" :stared="false" v-show="!hideUnstared" />
     </div>
 
-    <cog-icon class="cog" @click="showSettings = !showSettings" />
-  </div>
+    <a @click.prevent="scrollToTop" class="to-top-link">
+      <arrow-up-icon class="to-top" />
+    </a>
+  </main>
+
+  <app-settings-component @updated="loadAll" @loaded="loadAll" />
 
   <div id="notifications">
     <div class="notification-wrapper">
@@ -46,46 +47,34 @@
 <script setup>
 import { invoke } from '@tauri-apps/api/tauri';
 
-import { provide, ref } from 'vue';
-import { CogIcon } from '@heroicons/vue/outline';
+import { computed, provide, ref } from 'vue';
+import { ArrowUpIcon } from '@heroicons/vue/outline';
 
 import MiteProjects from './components/mite-projects.vue';
 import { AppSettings } from './composeables/app-settings';
+import AppSettingsComponent from './components/app-settings.vue';
 
 const appSettings = new AppSettings({
-  apiKey: null,
+  apiKey: '',
   stared: [],
+  miteApp: '',
 });
 
-const showSettings = ref(false);
 const hideUnstared = ref(false);
 
 const stared = ref([]);
 const apiKey = ref('loading');
+const miteApp = ref('');
 
 provide('apiKey', apiKey);
 
-appSettings.load().then((settings) => {
-  stared.value = settings.stared;
-  apiKey.value = settings.apiKey;
-}).then(() => {
-  loadProjects();
-  loadServices();
-});
-
-function saveApiKey() {
-  loadProjects();
-  loadServices();
-
-  appSettings.apiKey = apiKey.value;
-  appSettings.save();
-}
+const hasValidSettings = computed(() => apiKey.value !== '' && miteApp.value !== '');
 
 function starProject(projectId) {
   stared.value.push(projectId);
 
-  appSettings.stared = stared.value;
-  appSettings.save();
+  appSettings.set('stared', stared.value);
+
   loadProjects();
 }
 
@@ -102,6 +91,10 @@ const services = ref();
 
 provide('services', services);
 function loadServices() {
+  if (!hasValidSettings.value) {
+    return;
+  }
+
   // load services from mite via our rust backend
   invoke('get_services', { apiKey: apiKey.value }).then((message) => {
     const data = JSON.parse(message);
@@ -116,8 +109,20 @@ function loadServices() {
   });
 }
 
-const customerProjects = ref();
-const staredCustomerProjects = ref();
+
+function loadAll(settings) {
+  if (settings) {
+    stared.value = settings.stared;
+    apiKey.value = settings.apiKey;
+    miteApp.value = settings.miteApp;
+  }
+
+  loadProjects();
+  loadServices();
+}
+
+const customerProjects = ref({});
+const staredCustomerProjects = ref({});
 
 function groupProjects(projects) {
   const staredCustomers = {};
@@ -143,7 +148,6 @@ function groupProjects(projects) {
         name,
       });
 
-      console.log(staredCustomers);
       return;
     }
 
@@ -162,6 +166,10 @@ function groupProjects(projects) {
 }
 
 function loadProjects() {
+  if (!hasValidSettings.value) {
+    return;
+  }
+
   // load the projects from mite via our rust backend
   invoke('get_projects', { apiKey: apiKey.value }).then((message) => {
     const data = JSON.parse(message);
@@ -186,6 +194,20 @@ window.addEventListener('notify', (event) => {
     notifications.value = notifications.value.filter(v => v.id !== id);
   }, 3000);
 });
+
+const header = ref();
+function scrollToTop() {
+  header.value.scrollIntoView({
+    block: "start",
+    behavior: "smooth",
+  });
+}
+
+const showFilter = ref(false);
+const search = ref('');
+function filter() {
+  console.log(search.value);
+}
 </script>
 
 <style>
@@ -229,27 +251,22 @@ main {
   padding: 1rem;
 }
 
-#settings {
+.to-top-link {
   position: fixed;
   right: 0;
-  bottom: 0;
+  top: 0;
   margin: 0.5rem;
   padding: 0.5rem;
-  background-color: #fff;
 }
 
-.cog {
-  height: 2.5rem;
-  width: 2.5rem;
+.to-top {
+  height: 1rem;
+  width: 1rem;
   float: right;
 }
 
-.cog:hover {
-  cursor: pointer;
-  color: #ccc;
-}
-
 input[type="text"] {
+  box-sizing: border-box;
   border: none;
   border-bottom: 1px solid #ccc;
   outline: 0;
@@ -260,5 +277,26 @@ input[type="text"] {
 
 hr {
   margin: 2rem 0;
+}
+
+header {
+  display: block;
+  max-width: 300px;
+  margin-bottom: 4rem;
+}
+
+header h2 {
+  font-size: 1.25rem;
+  font-weight: 100;
+}
+
+header div {
+  margin: 0.5rem 0;
+}
+
+input[type=text].search {
+  box-sizing: border-box;
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
 }
 </style>

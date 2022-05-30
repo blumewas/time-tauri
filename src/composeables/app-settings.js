@@ -1,8 +1,8 @@
 import {appDir} from '@tauri-apps/api/path';
 import {writeFile, readTextFile} from '@tauri-apps/api/fs';
+import { invoke } from '@tauri-apps/api/tauri';
 
 
-// TODO add set/get method that directly writes settings to config
 export class AppSettings {
 
   constructor(defaults = {}) {
@@ -10,20 +10,43 @@ export class AppSettings {
     this.defaults = defaults;
   }
 
+  get(key) {
+    return this[key];
+  }
+
+  set(key, value) {
+    if (!this.keys.includes(key)) {
+      return;
+    }
+
+    this[key] = value;
+
+    this.save();
+  }
+
+  entries() {
+    const settings = {};
+    for (const k of this.keys) {
+      settings[k] = this[k];
+    }
+
+    return settings;
+  }
+
+  /**
+   * Save settings to file
+   */
   save() {
     appDir().then(path => {
-
-      const settings = {};
-      for (const k of this.keys) {
-        settings[k] = this[k];
-      }
-
-      const settingsJson = JSON.stringify(settings);
+      const settingsJson = JSON.stringify(this.entries());
 
       writeFile({contents: settingsJson, path: `${path}settings.txt`});
     });
   }
 
+   /**
+   * Save settings from file
+   */
   load() {
     return new Promise((resolve, reject) => {
       appDir().then(path => {
@@ -35,6 +58,9 @@ export class AppSettings {
               this[k] = loaded[k] ?? this.defaults[k];
             }
             
+            // emit to app that we have loaded our app
+            invoke('load_settings', this.entries());
+
             resolve(this);
           })
           .catch((err) => {
