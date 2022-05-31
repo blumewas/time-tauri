@@ -2,7 +2,7 @@
   <!-- TODO add filter with search -->
   <!-- TODO display current time with stop button -->
   <main>
-    <header ref="header">
+    <header>
       <h2 class="accordion-header" @click="showFilter = !showFilter">
         Filter <chevron-up-icon class="open-accordion" :class="{ 'rotate': showFilter }" />
       </h2>
@@ -30,9 +30,7 @@
       <mite-projects :customer-projects="customerProjects" @star="starProject" @unstar="unstarProject" :stared="false" v-show="!hideUnstared" />
     </div>
 
-    <a @click.prevent="scrollToTop" class="to-top-link">
-      <arrow-up-icon class="to-top" />
-    </a>
+    <scroll-top-button />
   </main>
 
   <app-settings-component @updated="loadAll" @loaded="loadAll" />
@@ -50,11 +48,12 @@
 import { invoke } from '@tauri-apps/api/tauri';
 
 import { computed, provide, ref } from 'vue';
-import { ArrowUpIcon, ChevronUpIcon } from '@heroicons/vue/outline';
+import { ChevronUpIcon } from '@heroicons/vue/outline';
 
 import MiteProjects from './components/mite-projects.vue';
 import { AppSettings } from './composeables/app-settings';
 import AppSettingsComponent from './components/app-settings.vue';
+import ScrollTopButton from './components/scroll-top-button.vue';
 
 const appSettings = new AppSettings({
   apiKey: '',
@@ -195,14 +194,6 @@ window.addEventListener('notify', (event) => {
   }, 3000);
 });
 
-const header = ref();
-function scrollToTop() {
-  header.value.scrollIntoView({
-    block: "start",
-    behavior: "smooth",
-  });
-}
-
 const showFilter = ref(false);
 const search = ref('');
 function filter() {
@@ -251,15 +242,7 @@ main {
   padding: 1rem;
 }
 
-.to-top-link {
-  position: fixed;
-  right: 0;
-  top: 0;
-  margin: 0.5rem;
-  padding: 0.5rem;
-}
-
-.to-top, .open-accordion {
+.open-accordion {
   height: 1rem;
   width: 1rem;
 }
@@ -270,10 +253,6 @@ main {
 
 .rotate {
   transform: rotate(180deg);
-}
-
-.to-top {
-  float: right;
 }
 
 .accordion-header {
