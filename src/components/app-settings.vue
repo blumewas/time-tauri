@@ -29,7 +29,7 @@ const appSettings = new AppSettings({
   miteApp: '',
 });
 
-const apiKey = ref('loading');
+const apiKey = ref('');
 const miteApp = ref('');
 
 appSettings.load().then((settings) => {

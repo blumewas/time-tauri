@@ -60,10 +60,8 @@ function reset() {
   emit('close');
 }
 
-const apiKey = inject('apiKey');
-
 function create(projectId, serviceId = null, minutes = 0, note = "") {
-  invoke('create_time', { apiKey: apiKey.value, projectId, serviceId, minutes, note }).then((res) => {
+  invoke('create_time', { projectId, serviceId, minutes, note }).then((res) => {
     if (!minutes || minutes === 0) {
       const data = JSON.parse(res);
 

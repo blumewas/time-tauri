@@ -63,10 +63,8 @@ const appSettings = new AppSettings({
 const hideUnstared = ref(false);
 
 const stared = ref([]);
-const apiKey = ref('loading');
+const apiKey = ref('');
 const miteApp = ref('');
-
-provide('apiKey', apiKey);
 
 const hasValidSettings = computed(() => apiKey.value !== '' && miteApp.value !== '');
 
@@ -96,7 +94,7 @@ function loadServices() {
   }
 
   // load services from mite via our rust backend
-  invoke('get_services', { apiKey: apiKey.value }).then((message) => {
+  invoke('get_services').then((message) => {
     const data = JSON.parse(message);
 
     services.value = data.map((value) => {
@@ -171,7 +169,7 @@ function loadProjects() {
   }
 
   // load the projects from mite via our rust backend
-  invoke('get_projects', { apiKey: apiKey.value }).then((message) => {
+  invoke('get_projects').then((message) => {
     const data = JSON.parse(message);
 
     groupProjects(data);

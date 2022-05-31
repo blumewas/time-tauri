@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { defineProps, inject, ref } from 'vue';
+import { defineProps, ref } from 'vue';
 import { PlayIcon, PencilIcon } from '@heroicons/vue/solid';
 
 
@@ -45,17 +45,16 @@ import StarToggle from './star-toggle.vue';
 const props = defineProps(['stared', 'customerProjects']);
 
 const selectedProject = ref(0);
-const apiKey = inject('apiKey');
 
 const displayProjectOptions = ref(0);
 
 function start(projectId) {
 
-  invoke('create_time', { apiKey: apiKey.value, projectId }).then((res) => {
+  invoke('create_time', { projectId }).then((res) => {
     const data = JSON.parse(res);
     const entryId = data.time_entry.id;
 
-    invoke('start_stop_time', { apiKey: apiKey.value, entryId }).then(() => {
+    invoke('start_stop_time', { entryId }).then(() => {
     
       window.dispatchEvent(new CustomEvent('notify', { detail: 'Timer gestartet' }));
       
