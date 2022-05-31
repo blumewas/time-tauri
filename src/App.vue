@@ -3,7 +3,9 @@
   <!-- TODO display current time with stop button -->
   <main>
     <header ref="header">
-      <h2 @click="showFilter = !showFilter">Filter</h2>
+      <h2 class="accordion-header" @click="showFilter = !showFilter">
+        Filter <chevron-up-icon class="open-accordion" :class="{ 'rotate': showFilter }" />
+      </h2>
       
       <div v-show="showFilter">
         <div>
@@ -48,7 +50,7 @@
 import { invoke } from '@tauri-apps/api/tauri';
 
 import { computed, provide, ref } from 'vue';
-import { ArrowUpIcon } from '@heroicons/vue/outline';
+import { ArrowUpIcon, ChevronUpIcon } from '@heroicons/vue/outline';
 
 import MiteProjects from './components/mite-projects.vue';
 import { AppSettings } from './composeables/app-settings';
@@ -257,10 +259,27 @@ main {
   padding: 0.5rem;
 }
 
-.to-top {
+.to-top, .open-accordion {
   height: 1rem;
   width: 1rem;
+}
+
+.open-accordion {
+  margin-left: 0.5rem;
+}
+
+.rotate {
+  transform: rotate(180deg);
+}
+
+.to-top {
   float: right;
+}
+
+.accordion-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 input[type="text"] {
