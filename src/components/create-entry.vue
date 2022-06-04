@@ -62,18 +62,15 @@ function reset() {
 
 function create(projectId, serviceId = null, minutes = 0, note = "") {
   invoke('create_time', { projectId, serviceId, minutes, note }).then((res) => {
-    if (!minutes || minutes === 0) {
-      const data = JSON.parse(res);
+    const data = JSON.parse(res);
 
-      console.log(data);
-      window.dispatchEvent(new CustomEvent('notify', { detail: 'Zeiteintrag erstellt' }));
-    }
+    console.log(data);
+    window.dispatchEvent(new CustomEvent('notify', { detail: 'Zeiteintrag erstellt' }));
   }).catch(err => console.log(err));
 }
 
 function saveEntry() {
   create(props.projectId, serviceId.value, minutes.value, note.value);
-
 
   reset();
 }

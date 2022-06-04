@@ -16,8 +16,7 @@ struct AppSettings {
 #[tauri::command]
 fn load_settings(api_key: String, mite_app: String, state: State<'_, AppState>) {
   let mut state_guard = state.0.lock().unwrap();
-  // Change field of state struct
-  state_guard.api_key = String::from("bar");
+
   
   // set app state
   *state_guard = AppSettings { mite_app: mite_app.to_string(), api_key: api_key.to_string() };
@@ -28,16 +27,23 @@ async fn get_projects(state: State<'_, AppState>) -> Result<String, String> {
   let state_guard = state.0.lock().unwrap();
 
   let url = format!("https://{}.mite.yo.lk/projects.json", state_guard.mite_app);
-
-  let body: String = ureq::get(&url)
+  println!("{}", &state_guard.api_key);
+  match ureq::get(&url)
     .set("X-MiteApiKey", &state_guard.api_key)
     .set("User-Agent", "time-tauri/v0.1 (schneider@mindtwo.de);")
-    .call()
-    .unwrap()
-    .into_string()
-    .unwrap();
+    .call() {
+      Ok(response) => {
+        let body = response.into_string().unwrap();
+
+        return Ok(body.into());
+      },
+      Err(ureq::Error::Status(code, response)) => {
+        let body = response.into_string().unwrap();
+        return Err(body.into());
+      }
+      Err(_) => { Err("".into()) }
+    }
   
-  Ok(body.into())
 }
 
 #[tauri::command]
@@ -46,15 +52,21 @@ async fn get_services(state: State<'_, AppState>) -> Result<String, String> {
 
   let url = format!("https://{}.mite.yo.lk/services.json", state_guard.mite_app);
 
-  let body: String = ureq::get(&url)
+  match ureq::get(&url)
     .set("X-MiteApiKey", &state_guard.api_key)
     .set("User-Agent", "time-tauri/v0.1 (schneider@mindtwo.de);")
-    .call()
-    .unwrap()
-    .into_string()
-    .unwrap();
-  
-  Ok(body.into())
+    .call() {
+      Ok(response) => {
+        let body = response.into_string().unwrap();
+
+        return Ok(body.into());
+      },
+      Err(ureq::Error::Status(code, response)) => {
+        let body = response.into_string().unwrap();
+        return Err(body.into());
+      }
+      Err(_) => { Err("".into()) }
+    }  
 }
 
 #[tauri::command]
@@ -83,7 +95,7 @@ async fn create_time(state: State<'_, AppState>, project_id: i32, service_id: Op
 }
 
 #[tauri::command]
-async fn start_stop_time(state: State<'_, AppState>, entry_id: i32) -> Result<String, String> {
+async fn start_timer(state: State<'_, AppState>, entry_id: i32) -> Result<String, String> {
   let state_guard = state.0.lock().unwrap();
   
   let url = format!("https://{}.mite.yo.lk/tracker/{}.json", state_guard.mite_app, entry_id);
@@ -108,7 +120,7 @@ fn heart_beat() -> String {
 fn main() {
   tauri::Builder::default()
     .manage(AppState(Mutex::new(AppSettings { mite_app: "".to_string(), api_key: "".to_string() })))
-    .invoke_handler(tauri::generate_handler![get_projects, heart_beat, create_time, start_stop_time, get_services, load_settings])
+    .invoke_handler(tauri::generate_handler![get_projects, heart_beat, create_time, start_timer, get_services, load_settings])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

@@ -25,7 +25,9 @@
 
         <span v-show="selectedProject !== project.id" class="options">
           <pencil-icon @click="selectedProject = project.id" class="btn" />
-          <play-icon @click="start(project.id)" class="btn" />
+
+          <!-- TODO handle right click quickstart -->
+          <play-icon @click="start($event, project.id)" @contextmenu.prevent="startRight(project.id)" class="btn" />
         </span>
       </div>
     </div>
@@ -48,19 +50,28 @@ const selectedProject = ref(0);
 
 const displayProjectOptions = ref(0);
 
-function start(projectId) {
+function start(event, projectId) {
+  // check for ctrl on mac
+  if (event.ctrlKey) {
+    return;
+  }
 
   invoke('create_time', { projectId }).then((res) => {
     const data = JSON.parse(res);
     const entryId = data.time_entry.id;
 
-    invoke('start_stop_time', { entryId }).then(() => {
+    invoke('start_timer', { entryId }).then(() => {
     
       window.dispatchEvent(new CustomEvent('notify', { detail: 'Timer gestartet' }));
       
     });
   }).catch(err => console.log(err));
 }
+
+function startRight(projectId) {
+  console.log('right clicked', projectId);
+}
+
 </script>
 
 <style scoped>
@@ -69,9 +80,9 @@ function start(projectId) {
 }
 
 .customer h2 {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: bold;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.125rem;
 }
 
 .project {

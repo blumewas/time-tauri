@@ -42,15 +42,13 @@ appSettings.load().then((settings) => {
 const showSettings = ref(false);
 
 function saveApiKey() {
-  appSettings.set('apiKey', apiKey.value);
-
-  emit('updated');
+  appSettings.set('apiKey', apiKey.value)
+    .then((settings) => emit('updated', settings));
 }
 
 function saveMiteApp() {
-  appSettings.set('miteApp', miteApp.value);
-
-  emit('updated');
+  appSettings.set('miteApp', miteApp.value)
+    .then((settings) => emit('updated', settings));
 }
 </script>
 

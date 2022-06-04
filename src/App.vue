@@ -1,27 +1,39 @@
 <template>
   <!-- TODO add filter with search -->
   <!-- TODO display current time with stop button -->
+  <!-- TODO no current time display start with no project and service  -->
   <main>
-    <header>
-      <h2 class="accordion-header" @click="showFilter = !showFilter">
-        Filter <chevron-up-icon class="open-accordion" :class="{ 'rotate': showFilter }" />
-      </h2>
-      
-      <div v-show="showFilter">
-        <div>
-          <input class="search" placeholder="Suche..." type="text" v-model="search" @input="filter" />
-        </div>
+    <div v-if="!hasValidSettings" class="center">
+      <span>Please configure the App</span>
+    </div>
+    <div v-else-if="errorMsg" class="error center">
+      {{ errorMsg }}
+    </div>
+    <div v-else>
+      <h1>
+        Projects
+      </h1>
 
-        <div>
-          <label>
-            <input type="checkbox" v-model="hideUnstared" />
-            Einträge ohne Stern ausblenden?
-          </label>
+      <div class="filter">
+        <h2 class="accordion-header" @click="showFilter = !showFilter">
+          Filter <chevron-up-icon class="open-accordion" :class="{ 'rotate': showFilter }" />
+        </h2>
+        
+        <div v-show="showFilter">
+          <div>
+            <input class="search" placeholder="Suche..." type="text" v-model="search" @input="filter" />
+          </div>
+
+          <div>
+            <label>
+              <input type="checkbox" v-model="hideUnstared" />
+              Einträge ohne Stern ausblenden?
+            </label>
+          </div>
         </div>
       </div>
-    </header>
 
-    <div v-if="hasValidSettings">
+
       <mite-projects :customer-projects="staredCustomerProjects" @star="starProject" @unstar="unstarProject"
         :stared="true" />
 
@@ -85,6 +97,9 @@ function unstarProject(projectId) {
   loadProjects();
 }
 
+// errorMessage
+const errorMsg = ref(false);
+
 // provide services
 const services = ref();
 
@@ -105,11 +120,17 @@ function loadServices() {
         name: service.name,
       };
     });
+
+  }).catch((err) => {
+    const { error } = JSON.parse(err);
+    errorMsg.value = error;
   });
 }
 
 
 function loadAll(settings) {
+  errorMsg.value = false;
+  
   if (settings) {
     stared.value = settings.stared;
     apiKey.value = settings.apiKey;
@@ -174,6 +195,10 @@ function loadProjects() {
     const data = JSON.parse(message);
 
     groupProjects(data);
+  }).catch((err) => {
+    const { error } = JSON.parse(err);
+
+    errorMsg.value = error;
   });
 }
 
@@ -275,24 +300,38 @@ hr {
   margin: 2rem 0;
 }
 
-header {
+h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.filter {
   display: block;
   max-width: 300px;
-  margin-bottom: 4rem;
+  margin-bottom: 2rem;
 }
 
-header h2 {
-  font-size: 1.25rem;
+.filter h2 {
+  font-size: 0.875rem;
   font-weight: 100;
+  margin: 0;
 }
 
-header div {
-  margin: 0.5rem 0;
+.filter div {
+  margin: 0.25rem 0;
 }
 
 input[type=text].search {
   box-sizing: border-box;
   font-size: 1rem;
   padding: 0.5rem 0.75rem;
+}
+
+.error {
+  color: red;
+}
+
+.center {
+  text-align: center;
 }
 </style>

@@ -20,8 +20,9 @@ export class AppSettings {
     }
 
     this[key] = value;
+    console.log('saving settings');
 
-    this.save();
+    return this.save();
   }
 
   entries() {
@@ -37,10 +38,21 @@ export class AppSettings {
    * Save settings to file
    */
   save() {
-    appDir().then(path => {
-      const settingsJson = JSON.stringify(this.entries());
+    return new Promise((resolve, reject) => {
 
-      writeFile({contents: settingsJson, path: `${path}settings.txt`});
+      appDir().then(path => {
+        const settingsJson = JSON.stringify(this.entries());
+
+        writeFile({contents: settingsJson, path: `${path}settings.txt`})
+          .then(() => {
+            this.update();
+
+            resolve(this);
+          })
+          .catch(() => {
+            reject('error while writing file')
+          });
+      });
     });
   }
 
@@ -59,7 +71,7 @@ export class AppSettings {
             }
             
             // emit to app that we have loaded our app
-            invoke('load_settings', this.entries());
+            this.update();
 
             resolve(this);
           })
@@ -73,6 +85,10 @@ export class AppSettings {
           });
       });
     });
+  }
+
+  update() {
+    invoke('load_settings', this.entries());
   }
 
 }
