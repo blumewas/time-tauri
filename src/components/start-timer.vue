@@ -79,7 +79,8 @@ useOn('clickedDocument', (event) => {
   background-color: #fff;
   overflow-y: scroll;
   max-height: 12rem;
-  right: 0;
+  right: 0.25rem;
+  top: 1.75rem;
 }
 
 .option {
