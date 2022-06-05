@@ -2,15 +2,15 @@
   <span class="create-wrapper">
 
     <select v-model="serviceId" v-show="step === 1" @change="next" ref="step1">
-      <option selected disabled :value="null">Service wählen...</option>
+      <option selected disabled :value="null">Select service...</option>
       <option v-for="service in services" :value="service.id" :key="service.id">
         {{ service.name }}
       </option>
     </select>
 
-    <input placeholder="Zeit in Minuten..." v-show="step === 2" v-model="minutes" type="number" @keydown.enter="next" ref="step2" />
+    <input placeholder="Time in minutes..." v-show="step === 2" v-model="minutes" type="number" @keydown.enter="next" ref="step2" />
 
-    <input placeholder="Notiz..." v-show="step === 3" v-model="note" @keydown.enter="saveEntry" ref="step3" />
+    <input placeholder="Note..." v-show="step === 3" v-model="note" @keydown.enter="saveEntry" ref="step3" />
 
     <check-icon @click="saveEntry" class="btn" />
     <x-icon @click="reset" class="btn" />
@@ -63,7 +63,7 @@ function reset() {
 
 function create(projectId, serviceId = null, minutes = 0, note = "") {
   Mite.createTime(projectId, serviceId, minutes, note)
-    .then(() => trigger('notify', 'Zeiteintrag erstellt'))
+    .then(() => trigger('notify', 'Time Entry created'))
     .catch(err => console.log(err));
 }
 
@@ -79,17 +79,6 @@ function saveEntry() {
   display: inline-flex;
   align-items: center;
   margin-left: 0.5rem;
-}
-
-.btn {
-  height: 1.5rem;
-  width: 1.5rem;
-  margin-left: 0.5rem;
-}
-
-.btn:hover {
-  color: #ccc;
-  cursor: pointer;
 }
 
 select, input {

@@ -4,7 +4,7 @@
 )]
 
 mod commands;
-use commands::{load_settings, get_projects, create_time, get_services, start_timer};
+use commands::{create_time, get_projects, get_services, load_settings, start_timer, get_timer, stop_timer};
 
 use std::sync::Mutex;
 
@@ -22,8 +22,20 @@ fn heart_beat() -> String {
 
 fn main() {
   tauri::Builder::default()
-    .manage(AppState(Mutex::new(AppSettings { mite_app: "".to_string(), api_key: "".to_string() })))
-    .invoke_handler(tauri::generate_handler![get_projects, heart_beat, create_time, start_timer, get_services, load_settings])
+    .manage(AppState(Mutex::new(AppSettings {
+      mite_app: "".to_string(),
+      api_key: "".to_string(),
+    })))
+    .invoke_handler(tauri::generate_handler![
+      get_projects,
+      heart_beat,
+      create_time,
+      get_services,
+      load_settings,
+      start_timer,
+      get_timer,
+      stop_timer,
+    ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

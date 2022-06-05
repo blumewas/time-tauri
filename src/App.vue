@@ -1,7 +1,5 @@
 <template>
   <!-- TODO add filter with search -->
-  <!-- TODO display current time with stop button -->
-  <!-- TODO no current time display start with no project and service  -->
   <main>
     <div v-if="!hasValidSettings" class="center">
       <span>Please configure the App</span>
@@ -10,6 +8,9 @@
       {{ errorMsg }}
     </div>
     <div v-else>
+
+      <app-timer />
+
       <h1>
         Projects
       </h1>
@@ -60,7 +61,8 @@ import { computed, provide, ref, reactive } from 'vue';
 import { ChevronUpIcon } from '@heroicons/vue/outline';
 
 import MiteProjects from './components/mite-projects.vue';
-// import { AppSettings } from './helper/app-settings';
+
+import AppTimer from './components/app-timer.vue';
 import AppSettingsComponent from './components/app-settings.vue';
 import ScrollTopButton from './components/scroll-top-button.vue';
 import AppNotifications from './components/app-notifications.vue';
@@ -153,7 +155,7 @@ function filter() {
 }
 
 document.addEventListener('click', (event) => {
-  trigger('clickedDocument', event);
+  trigger('clicked-document', event);
 });
 </script>
 
@@ -163,7 +165,7 @@ document.addEventListener('click', (event) => {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  margin-top: 60px;
+  margin-top: 2.5rem;
 }
 
 main {
@@ -238,5 +240,21 @@ input[type=text].search {
 
 .center {
   text-align: center;
+}
+
+.btn {
+  height: 1.5rem;
+  width: 1.5rem;
+  margin-left: 0.5rem;
+}
+
+.btn:hover {
+  color: #ccc;
+  cursor: pointer;
+}
+
+.btn[disabled] {
+  color: #ccc;
+  pointer-events: none;
 }
 </style>

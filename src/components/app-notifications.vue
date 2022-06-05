@@ -54,6 +54,6 @@ useOn('notify', (message) => {
   color: #456613;
   background-color: #bdff59;
   margin-top: 0.25rem;
-  padding: 1rem;
+  padding: 0.5rem 1rem;
 }
 </style>

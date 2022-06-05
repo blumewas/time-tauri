@@ -31,10 +31,12 @@ function start(event, serviceId = null) {
   }
 
   Mite.startTimer(props.projectId, serviceId)
-    .then(() => {
+    .then(({ tracker }) => {
       trigger('notify', 'Timer gestartet');
 
       showServiceDropdown.value = false;
+
+      trigger('started-timer', tracker);
     })
     .catch(err => console.log(err));
 }
@@ -43,25 +45,14 @@ function startRight() {
   showServiceDropdown.value = true;
 }
 
-useOn('clickedDocument', (event) => {
+useOn('clicked-document', (event) => {
   if (!event.target.classList.contains('option')) {
     showServiceDropdown.value = false;
   }
-})
+});
 </script>
 
 <style scoped>
-.btn {
-  height: 1.5rem;
-  width: 1.5rem;
-  margin-left: 0.5rem;
-}
-
-.btn:hover {
-  color: #ccc;
-  cursor: pointer;
-}
-
 .play-btn {
   position: relative;
   display: flex;

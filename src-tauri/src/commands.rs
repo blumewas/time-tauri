@@ -1,7 +1,7 @@
 
 use tauri::{command, State};
 
-static REFERER: &'static str = "time-tauri/v0.1 (schneider@mindtwo.de);";
+static REFERER: &'static str = "time-tauri/v0.2 (schneider@mindtwo.de);";
 
 // load settings from app folder
 #[command]
@@ -63,7 +63,7 @@ pub async fn get_services(state: State<'_, super::AppState>) -> Result<String, S
 
 // create a time entry via mite api
 #[command]
-pub async fn create_time(state: State<'_, super::AppState>, project_id: i32, service_id: Option<i32>, note: Option<String>, minutes: Option<i32>) -> Result<String, String> {
+pub async fn create_time(state: State<'_, super::AppState>, project_id: Option<i32>, service_id: Option<i32>, note: Option<String>, minutes: Option<i32>) -> Result<String, String> {
   let state_guard = state.0.lock().unwrap();
 
   let url = format!("https://{}.mite.yo.lk/time_entries.json", state_guard.mite_app);
@@ -92,8 +92,31 @@ pub async fn create_time(state: State<'_, super::AppState>, project_id: i32, ser
     }  
 }
 
+// get timer that runs on start via mite api
+#[command]
+pub async fn get_timer(state: State<'_, super::AppState>) -> Result<String, String> {
+  let state_guard = state.0.lock().unwrap();
+  
+  let url = format!("https://{}.mite.yo.lk/tracker.json", state_guard.mite_app);
+
+  match ureq::get(&url)
+    .set("X-MiteApiKey", &state_guard.api_key)
+    .set("User-Agent", REFERER)
+    .call() {
+      Ok(response) => {
+        let body = response.into_string().unwrap();
+        return Ok(body.into());
+      },
+      Err(ureq::Error::Status(_code, response)) => {
+        let body = response.into_string().unwrap();
+        return Err(body.into());
+      }
+      Err(_) => { Err("".into()) }
+    }
+}
+
 // start a time entry
-#[tauri::command]
+#[command]
 pub async fn start_timer(state: State<'_, super::AppState>, entry_id: i32) -> Result<String, String> {
   let state_guard = state.0.lock().unwrap();
   
@@ -103,6 +126,29 @@ pub async fn start_timer(state: State<'_, super::AppState>, entry_id: i32) -> Re
     .set("X-MiteApiKey", &state_guard.api_key)
     .set("User-Agent", REFERER)
     .set("Content-Type", "application/json; charset=UTF-8")
+    .call() {
+      Ok(response) => {
+        let body = response.into_string().unwrap();
+        return Ok(body.into());
+      },
+      Err(ureq::Error::Status(_code, response)) => {
+        let body = response.into_string().unwrap();
+        return Err(body.into());
+      }
+      Err(_) => { Err("".into()) }
+    }
+}
+
+// start a time entry
+#[command]
+pub async fn stop_timer(state: State<'_, super::AppState>, timer_id: i32) -> Result<String, String> {
+  let state_guard = state.0.lock().unwrap();
+  
+  let url = format!("https://{}.mite.yo.lk/tracker/{}.json", state_guard.mite_app, timer_id);
+
+  match ureq::delete(&url)
+    .set("X-MiteApiKey", &state_guard.api_key)
+    .set("User-Agent", REFERER)
     .call() {
       Ok(response) => {
         let body = response.into_string().unwrap();

@@ -34,15 +34,54 @@ export class Mite {
     return data.map(({project}) => project);
   }
 
-  static async startTimer(projectId, serviceId = null) {
+  /**
+   * Get current timer from mite
+   * 
+   * @returns {Object}
+   */
+  static async getTimer() {
+    const timer = await this.handle('get_timer');
+
+    return timer;
+  }
+
+  /**
+   * Start a timer
+   * 
+   * @param {number} projectId 
+   * @param {number} serviceId 
+   */
+  static async startTimer(projectId = null, serviceId = null) {
     const created = await this.handle('create_time', { projectId, serviceId });
 
     const entryId = created.time_entry.id;
 
-    await this.handle('start_timer', { entryId });
+    const timer = await this.handle('start_timer', { entryId });
+
+    return timer;
   }
 
-  static async createTime(projectId, serviceId = null, minutes = 0, note = "") {
+  /**
+   * Stop current timer
+   * 
+   * @param {number} timerId 
+   * @returns 
+   */
+  static async stopTimer(timerId) {
+    const result = await this.handle('stop_timer', { timerId });
+    
+    return result;
+  }
+
+  /**
+   * Create time entry
+   * 
+   * @param {number} projectId 
+   * @param {number} serviceId 
+   * @param {number} minutes 
+   * @param {string} note 
+   */
+  static async createTime(projectId = null, serviceId = null, minutes = 0, note = "") {
     await this.handle('create_time', { projectId, serviceId, minutes, note });
   }
 
