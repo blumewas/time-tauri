@@ -1,7 +1,7 @@
 
 use tauri::{command, State};
 
-static REFERER: &'static str = "time-tauri/v0.2 (schneider@mindtwo.de);";
+static REFERER: &'static str = "time-tauri/v0.3 (https://github.com/blumewas/time-tauri);";
 
 // load settings from app folder
 #[command]

@@ -60,7 +60,8 @@ function triggerUnstar(projectId) {
 
 <style scoped>
 .customer {
-  margin: 0.5rem 0;
+  margin: 1.125rem 0;
+  box-sizing: border-box;
 }
 
 .customer h2 {

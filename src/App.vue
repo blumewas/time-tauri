@@ -1,5 +1,4 @@
 <template>
-  <!-- TODO add filter with search -->
   <main>
     <div v-if="!hasValidSettings" class="center">
       <span>Please configure the App</span>
@@ -22,30 +21,37 @@
         
         <div v-show="showFilter">
           <div>
-            <input class="search" placeholder="Suche..." type="text" v-model="search" @input="filter" />
+            <input class="search" placeholder="Suche..." type="text" v-model="filter.search" @input="runFilter" />
           </div>
 
           <div>
             <label>
-              <input type="checkbox" v-model="hideUnstared" />
+              <input type="checkbox" v-model="filter.hideUnstared" />
               Einträge ohne Stern ausblenden?
             </label>
           </div>
         </div>
       </div>
 
+      <div v-if="filter.result">
+        <mite-projects :customer-projects="filter.result"
+          :stared="appSettings.stared ?? []"
+          v-show="!filter.hideUnstared"
+        />
+      </div>
+      <div v-else>
+        <mite-projects
+          :customer-projects="staredProjects"
+          :stared="true"
+        />
 
-      <mite-projects
-        :customer-projects="staredProjects"
-        :stared="true"
-      />
+        <hr v-show="!filter.hideUnstared" />
 
-      <hr v-show="!hideUnstared" />
-
-      <mite-projects :customer-projects="projects"
-        :stared="appSettings.stared ?? []"
-        v-show="!hideUnstared"
-      />
+        <mite-projects :customer-projects="projects"
+          :stared="appSettings.stared ?? []"
+          v-show="!filter.hideUnstared"
+        />
+      </div>
     </div>
 
     <scroll-top-button />
@@ -79,7 +85,11 @@ const errorMsg = ref(false);
 const appSettings = reactive({});
 
 // filter hide unstared
-const hideUnstared = ref(false);
+const filter = reactive({
+  hideUnstared: false,
+  search: '',
+  result: null,
+});
 
 // compute if settings are valid
 const hasValidSettings = computed(() => appSettings.apiKey !== '' && appSettings.miteApp !== '');
@@ -149,9 +159,35 @@ const staredProjects = computed(() => {
 });
 
 const showFilter = ref(false);
-const search = ref('');
-function filter() {
-  console.log(search.value);
+function runFilter() {
+  const {search} = filter;
+
+  // clear result if string is empty
+  if (!search || search === '') {
+    filter.result = null;
+    return;
+  }
+
+  // set our filter result if search has contents
+  const s = search.toLocaleLowerCase();
+  filter.result = Object.entries(projects.value).reduce((map, [customer, projects]) => {
+
+    // return all projects if the customer includes our search string
+    if (customer.toLowerCase().includes(s)) {
+      map[customer] = projects;
+
+      return map;
+    }
+
+    // filter projects
+    const filteredProjects = projects.filter((p) => p.name.toLowerCase().includes(s));
+    if (filteredProjects.length > 0) {
+      // if we have projects that match our search we put it along customer in map
+      map[customer] = filteredProjects;
+    }
+
+    return map;
+  }, {});
 }
 
 document.addEventListener('click', (event) => {
@@ -160,6 +196,11 @@ document.addEventListener('click', (event) => {
 </script>
 
 <style>
+* {
+  padding: 0;
+  margin: 0;
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -231,7 +272,7 @@ h1 {
 input[type=text].search {
   box-sizing: border-box;
   font-size: 1rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.25rem;
 }
 
 .error {
