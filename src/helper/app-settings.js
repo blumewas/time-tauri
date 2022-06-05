@@ -10,21 +10,51 @@ export class AppSettings {
     this.defaults = defaults;
   }
 
+  starProject(id) {
+    this.stared.push(id);
+
+    this.save();
+  }
+
+  unstarProject(id) {
+    this.stared = this.stared.filter(val => val !== id);
+
+    this.save();
+  }
+
+  /**
+   * Get setting value by key
+   * 
+   * @param {*} key 
+   * @returns 
+   */
   get(key) {
     return this[key];
   }
 
+  /**
+   * Update settings key value pair
+   * 
+   * @param {*} key 
+   * @param {*} value 
+   * @returns 
+   */
   set(key, value) {
     if (!this.keys.includes(key)) {
       return;
     }
 
     this[key] = value;
-    console.log('saving settings');
-
+    
+    // save settings after we updated a value
     return this.save();
   }
 
+  /**
+   * Get Object for all settings entries
+   * 
+   * @returns {Object}
+   */
   entries() {
     const settings = {};
     for (const k of this.keys) {
@@ -45,8 +75,10 @@ export class AppSettings {
 
         writeFile({contents: settingsJson, path: `${path}settings.txt`})
           .then(() => {
+            // emit to app that we have changed settings
             this.update();
 
+            // we want to have settings in the promise on success
             resolve(this);
           })
           .catch(() => {
@@ -65,14 +97,16 @@ export class AppSettings {
         readTextFile(`${path}settings.txt`)
           .then((contents) => {
             const loaded = JSON.parse(contents);
-      
+            
+            // load all values from settings
             for (const k of this.keys) {
               this[k] = loaded[k] ?? this.defaults[k];
             }
-            
-            // emit to app that we have loaded our app
+
+            // emit to app that we have changed settings
             this.update();
 
+            // we want to have settings in the promise on success
             resolve(this);
           })
           .catch((err) => {
@@ -87,6 +121,9 @@ export class AppSettings {
     });
   }
 
+  /**
+   * Notify rust that we updated
+   */
   update() {
     invoke('load_settings', this.entries());
   }

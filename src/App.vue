@@ -34,189 +34,116 @@
       </div>
 
 
-      <mite-projects :customer-projects="staredCustomerProjects" @star="starProject" @unstar="unstarProject"
-        :stared="true" />
+      <mite-projects
+        :customer-projects="staredProjects"
+        :stared="true"
+      />
 
       <hr v-show="!hideUnstared" />
 
-      <mite-projects :customer-projects="customerProjects" @star="starProject" @unstar="unstarProject" :stared="false" v-show="!hideUnstared" />
+      <mite-projects :customer-projects="projects"
+        :stared="appSettings.stared ?? []"
+        v-show="!hideUnstared"
+      />
     </div>
 
     <scroll-top-button />
   </main>
 
-  <app-settings-component @updated="loadAll" @loaded="loadAll" />
+  <app-settings-component @updated="load" @loaded="load" />
 
-  <div id="notifications">
-    <div class="notification-wrapper">
-      <div class="notification" v-for="notification in notifications" :key="notification.id">
-        {{ notification.text }}
-      </div>
-    </div>
-  </div>
+  <app-notifications />
 </template>
 
 <script setup>
-import { invoke } from '@tauri-apps/api/tauri';
-
-import { computed, provide, ref } from 'vue';
+import { computed, provide, ref, reactive } from 'vue';
 import { ChevronUpIcon } from '@heroicons/vue/outline';
 
 import MiteProjects from './components/mite-projects.vue';
-import { AppSettings } from './composeables/app-settings';
+// import { AppSettings } from './helper/app-settings';
 import AppSettingsComponent from './components/app-settings.vue';
 import ScrollTopButton from './components/scroll-top-button.vue';
+import AppNotifications from './components/app-notifications.vue';
 
-const appSettings = new AppSettings({
-  apiKey: '',
-  stared: [],
-  miteApp: '',
-});
+import { Mite } from './commands/mite';
+import { Util } from './helper/util';
+import { trigger } from './composeables/emit';
 
-const hideUnstared = ref(false);
-
-const stared = ref([]);
-const apiKey = ref('');
-const miteApp = ref('');
-
-const hasValidSettings = computed(() => apiKey.value !== '' && miteApp.value !== '');
-
-function starProject(projectId) {
-  stared.value.push(projectId);
-
-  appSettings.set('stared', stared.value);
-
-  loadProjects();
-}
-
-function unstarProject(projectId) {
-  stared.value = stared.value.filter(val => val !== projectId);
-
-  appSettings.stared = stared.value;
-  appSettings.save();
-  loadProjects();
-}
 
 // errorMessage
 const errorMsg = ref(false);
 
+// our apps settings loaded from app folder
+const appSettings = reactive({});
+
+// filter hide unstared
+const hideUnstared = ref(false);
+
+// compute if settings are valid
+const hasValidSettings = computed(() => appSettings.apiKey !== '' && appSettings.miteApp !== '');
+
 // provide services
-const services = ref();
-
+const services = ref([]);
 provide('services', services);
-function loadServices() {
-  if (!hasValidSettings.value) {
-    return;
-  }
 
-  // load services from mite via our rust backend
-  invoke('get_services').then((message) => {
-    const data = JSON.parse(message);
+// reactive projects
+const projects = ref([]);
 
-    services.value = data.map((value) => {
-      const { service } = value;
-      return {
-        id: service.id,
-        name: service.name,
-      };
-    });
-
-  }).catch((err) => {
-    const { error } = JSON.parse(err);
-    errorMsg.value = error;
-  });
-}
-
-
-function loadAll(settings) {
+/**
+ * Load all data when we load our settings
+ */
+function load(settings) {
   errorMsg.value = false;
   
   if (settings) {
-    stared.value = settings.stared;
-    apiKey.value = settings.apiKey;
-    miteApp.value = settings.miteApp;
+    appSettings.stared = settings.stared;
+    appSettings.apiKey = settings.apiKey;
+    appSettings.miteApp = settings.miteApp;
   }
 
-  loadProjects();
-  loadServices();
-}
-
-const customerProjects = ref({});
-const staredCustomerProjects = ref({});
-
-function groupProjects(projects) {
-  const staredCustomers = {};
-  const customers = {};
-
-  projects.forEach((value) => {
-    const { project } = value;
-
-    if (project.archived) {
-      return;
-    }
-
-    const { id, customer_name, name } = project;
-
-    if (stared.value.includes(id)) {
-
-      if (!staredCustomers[customer_name]) {
-        staredCustomers[customer_name] = [];
-      }
-
-      staredCustomers[customer_name].push({
-        id,
-        name,
-      });
-
-      return;
-    }
-
-    if (!customers[customer_name]) {
-      customers[customer_name] = [];
-    }
-
-    customers[customer_name].push({
-      id,
-      name,
-    });
-  });
-
-  customerProjects.value = customers;
-  staredCustomerProjects.value = staredCustomers;
-}
-
-function loadProjects() {
+  // only load if we have valid settings
   if (!hasValidSettings.value) {
     return;
   }
 
-  // load the projects from mite via our rust backend
-  invoke('get_projects').then((message) => {
-    const data = JSON.parse(message);
+  // load all values we need from our project
+  Promise.all([
+    Mite.getProjects(),
+    Mite.getServices()
+  ])
+  .then((results) => {
+    const [_projects, _services] = results;
 
-    groupProjects(data);
-  }).catch((err) => {
-    const { error } = JSON.parse(err);
-
+    projects.value = Util.groupBy(_projects, 'customer_name');
+    services.value = _services;
+  })
+  .catch((error) => {
     errorMsg.value = error;
   });
+  
 }
 
-// notifications
-const notifications = ref([]);
+// get stared projects
+const staredProjects = computed(() => {
+  return Object
+    .entries(projects.value)
+    .reduce((map, [customer, projects]) => {
+      
+      projects.forEach((project) => {
 
-window.addEventListener('notify', (event) => {
-  const { detail } = event;
-  const id = new Date().getTime();
+        const { id, name } = project;
 
-  notifications.value.push({
-    id,
-    text: detail,
-  });
+        if (appSettings.stared.includes(id)) {
+          if (!map[customer]) {
+            map[customer] = [];
+          }
 
-  window.setTimeout(() => {
-    notifications.value = notifications.value.filter(v => v.id !== id);
-  }, 3000);
+          map[customer].push({ id, name });
+        }
+      });
+      
+      return map;
+    }, {});
 });
 
 const showFilter = ref(false);
@@ -224,6 +151,10 @@ const search = ref('');
 function filter() {
   console.log(search.value);
 }
+
+document.addEventListener('click', (event) => {
+  trigger('clickedDocument', event);
+});
 </script>
 
 <style>
@@ -239,32 +170,6 @@ main {
   display: block;
   margin: 0 auto;
   max-width: 600px;
-}
-
-#notifications {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.notification-wrapper {
-  display: flex;
-  flex-direction: column;
-  padding: 0.5rem;
-  float: right;
-}
-
-.notification {
-  font-size: 0.875rem;
-  border-radius: 0.25rem;
-  box-shadow: 1px 1px 8px 1px rgba(0, 0, 0, 0.2);
-  color: #456613;
-  background-color: #bdff59;
-  padding: 1rem;
 }
 
 .open-accordion {

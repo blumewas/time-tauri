@@ -18,8 +18,9 @@
 
 <script setup>
 import { CogIcon } from '@heroicons/vue/outline';
-import { AppSettings } from '../composeables/app-settings';
+import { AppSettings } from '../helper/app-settings';
 import { ref, defineEmits } from 'vue';
+import { useOn } from '@/composeables/emit';
 
 const emit = defineEmits(['updated', 'loaded']);
 
@@ -36,10 +37,22 @@ appSettings.load().then((settings) => {
   miteApp.value = settings.miteApp;
   apiKey.value = settings.apiKey;
 
-  emit('loaded', settings);
+  emit('updated', settings);
 });
 
 const showSettings = ref(false);
+
+useOn('star', (event) => {
+  appSettings.starProject(event);
+
+  emit('updated', appSettings.entries());
+});
+
+useOn('unstar', (event) => {
+  appSettings.unstarProject(event);
+
+  emit('updated', appSettings.entries());
+});
 
 function saveApiKey() {
   appSettings.set('apiKey', apiKey.value)

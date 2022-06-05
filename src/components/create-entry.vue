@@ -20,7 +20,8 @@
 <script setup>
 import { ref, defineProps, inject, defineEmits } from 'vue';
 import { XIcon, CheckIcon } from '@heroicons/vue/solid';
-import { invoke } from '@tauri-apps/api/tauri';
+import { trigger } from '@/composeables/emit';
+import { Mite } from '@/commands/mite';
 
 const props = defineProps(['projectId']);
 const emit = defineEmits(['close'])
@@ -61,12 +62,9 @@ function reset() {
 }
 
 function create(projectId, serviceId = null, minutes = 0, note = "") {
-  invoke('create_time', { projectId, serviceId, minutes, note }).then((res) => {
-    const data = JSON.parse(res);
-
-    console.log(data);
-    window.dispatchEvent(new CustomEvent('notify', { detail: 'Zeiteintrag erstellt' }));
-  }).catch(err => console.log(err));
+  Mite.createTime(projectId, serviceId, minutes, note)
+    .then(() => trigger('notify', 'Zeiteintrag erstellt'))
+    .catch(err => console.log(err));
 }
 
 function saveEntry() {

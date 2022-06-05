@@ -13,10 +13,10 @@
           @mouseleave="displayProjectOptions = 0"
         >
           <star-toggle 
-            :checked="stared"
+            :checked="stared === true || stared.includes(project.id)"
             :show="displayProjectOptions === project.id"
-            @star="$emit('star', project.id)"
-            @unstar="$emit('unstar', project.id)"
+            @star="triggerStar(project.id)"
+            @unstar="triggerUnstar(project.id)"
           />
 
           {{ project.name }}
@@ -26,8 +26,7 @@
         <span v-show="selectedProject !== project.id" class="options">
           <pencil-icon @click="selectedProject = project.id" class="btn" />
 
-          <!-- TODO handle right click quickstart -->
-          <play-icon @click="start($event, project.id)" @contextmenu.prevent="startRight(project.id)" class="btn" />
+          <start-timer :project-id="project.id" />
         </span>
       </div>
     </div>
@@ -37,12 +36,12 @@
 
 <script setup>
 import { defineProps, ref } from 'vue';
-import { PlayIcon, PencilIcon } from '@heroicons/vue/solid';
+import { PencilIcon } from '@heroicons/vue/solid';
 
-
-import { invoke } from '@tauri-apps/api/tauri';
 import CreateEntry from './create-entry.vue';
 import StarToggle from './star-toggle.vue';
+import { trigger } from '@/composeables/emit';
+import StartTimer from './start-timer.vue';
 
 const props = defineProps(['stared', 'customerProjects']);
 
@@ -50,28 +49,13 @@ const selectedProject = ref(0);
 
 const displayProjectOptions = ref(0);
 
-function start(event, projectId) {
-  // check for ctrl on mac
-  if (event.ctrlKey) {
-    return;
-  }
-
-  invoke('create_time', { projectId }).then((res) => {
-    const data = JSON.parse(res);
-    const entryId = data.time_entry.id;
-
-    invoke('start_timer', { entryId }).then(() => {
-    
-      window.dispatchEvent(new CustomEvent('notify', { detail: 'Timer gestartet' }));
-      
-    });
-  }).catch(err => console.log(err));
+function triggerStar(projectId) {
+  trigger('star', projectId);
 }
 
-function startRight(projectId) {
-  console.log('right clicked', projectId);
+function triggerUnstar(projectId) {
+  trigger('unstar', projectId);
 }
-
 </script>
 
 <style scoped>

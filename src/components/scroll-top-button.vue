@@ -1,18 +1,27 @@
 <template>
-  <a @click.prevent="scrollToTop" class="to-top-link">
+  <a @click.prevent="scrollToTop" class="to-top-link" v-show="show">
     <arrow-up-icon class="to-top-icon" />
   </a>
 </template>
 
 <script setup>
 import { ArrowUpIcon } from '@heroicons/vue/outline';
+import { ref } from 'vue';
+
+const show = ref(false);
 
 function scrollToTop() {
-  document.querySelector('header').scrollIntoView({
+  document.querySelector('main').scrollIntoView({
     block: "start",
     behavior: "smooth",
   });
+
+  show.value = false;
 }
+
+document.addEventListener('scroll', () => {
+  show.value = true;
+});
 </script>
 
 <style scoped>
