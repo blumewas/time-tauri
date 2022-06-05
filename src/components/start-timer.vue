@@ -57,8 +57,15 @@ useOn('clickedDocument', (event) => {
   margin-left: 0.5rem;
 }
 
+.btn:hover {
+  color: #ccc;
+  cursor: pointer;
+}
+
 .play-btn {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .dropdown {
