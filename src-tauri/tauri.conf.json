@@ -7,8 +7,8 @@
     "distDir": "Set automatically by Vue CLI plugin"
   },
   "package": {
-    "productName": "time-tauri",
-    "version": "0.1.0"
+    "productName": "Time Tauri",
+    "version": "0.4.0"
   },
   "tauri": {
     "allowlist": {
@@ -20,6 +20,26 @@
         "writeFile": true
       },
       "path": {
+        "all": true
+      },
+      "dialog": {
+        "all": false,
+        "ask": true,
+        "confirm": false,
+        "message": false,
+        "open": false,
+        "save": false
+      },
+      "globalShortcut": {
+        "all": true
+      },
+      "process": {
+        "all": false,
+        "exit": true,
+        "relaunch": false,
+        "relaunchDangerousAllowSymlinkMacos": false
+      },
+      "clipboard": {
         "all": true
       }
     },
