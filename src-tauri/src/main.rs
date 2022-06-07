@@ -18,6 +18,8 @@ pub struct AppSettings {
   api_key: String,
 }
 
+static mut IS_MINIMIZED: bool = false;
+
 #[tauri::command]
 fn heart_beat() -> String {
   "Hello from Rust!".into()
@@ -54,19 +56,24 @@ fn main() {
     RunEvent::Ready => {
       let app_handle = app.clone();
 
-      let window = app_handle.get_window("main").unwrap();
-
       app
         .global_shortcut_manager()
-        .register("CmdOrCtrl+Shift+T", move || {
+        .register("CmdOrCtrl+Shift+Comma", move || {
           let app_handle = app_handle.clone();
 
           let window = app_handle.get_window("main").unwrap();
-          if window.is_visible().unwrap() {
-            window.minimize().unwrap();
-          } else {
-            window.unminimize().unwrap();
-            window.set_focus().unwrap();
+          
+          unsafe {
+            if IS_MINIMIZED {
+              window.set_focus().unwrap();
+              window.unminimize().unwrap();
+
+              IS_MINIMIZED = false;
+            } else {
+              window.minimize().unwrap();
+
+              IS_MINIMIZED = true;
+            }
           }
         })
         .unwrap();

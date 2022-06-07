@@ -1,41 +1,35 @@
 # time-tauri
 
+This repo contains a test project for the tauri framework.
+The tauri framework is build in Rust and uses the Gecko webview
+which enables us to compile webapps as native apps. 
+
+This opens the possibility to compile the app cross-origin from
+one single codebase. To enable some features on certain platforms
+some tweaks are required.
+
+The app us currently only tested on MacOs.
+
 ## Known issues
 
-### Saving settings
+When minimizing the window via the decorator, the hotkey needs to be toggled two times.
 
-Currently there is a bug with saving the settings. You can fix this by creating a `settings.txt` inside the Applications Spport folder. You can find it under path `/Users/andreasschneider/Library/Application Support/blumewas.timetauri`. Inside the `settings.txt` put the following content:
+## Contribution
 
-```
-{"apiKey":"YOUR_MITE_APIKEY","stared":[],"miteApp":"YOUR_MITE_APP"}
-```
-
-1. `YOUR_MITE_APIKEY` - replace with your mite api key. You cann find it inside your profile on *mite.yo.lk*
-2. `YOUR_MITE_APP` - first part of the URL you use to access mite. `e.g. company.mite.yo.lk here it would be "company"`
-
-### Search
-
-The search is currently not implemented.
-
-## Project setup
+### Project setup
 ```
 npm install
 ```
 
 ### Compiles and hot-reloads for development
 ```
-npm run serve
+npm run tauri:serve
 ```
 
 ### Compiles and minifies for production
 ```
-npm run build
+npm run tauri:build
 ```
 
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
+### Customize Vue.js build configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).

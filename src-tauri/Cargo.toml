@@ -1,6 +1,6 @@
 [package]
 name = "time_tauri"
-version = "0.4.1"
+version = "0.4.2"
 description = "Tauri app to enhance time tracking via mite."
 authors = ["blumewas"]
 license = ""
