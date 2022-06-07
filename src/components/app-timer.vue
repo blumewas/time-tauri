@@ -91,6 +91,11 @@ function startInterval(hours = 0, minutes = 0) {
 
   stopWatch.interval = window.setInterval(() => {
     stopWatch.minutes += 1;
+
+    if (stopWatch.minutes >= 60) {
+      stopWatch.hours += 1;
+      stopWatch.minutes = 0;
+    }
   }, 60 * 1000);
 }
 
