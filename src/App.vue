@@ -1,5 +1,6 @@
 <template>
   <main>
+    <!-- TODO help view -->
     <div v-if="!hasValidSettings" class="center">
       <span>Please configure the App</span>
     </div>

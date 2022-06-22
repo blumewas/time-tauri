@@ -3,16 +3,20 @@
   windows_subsystem = "windows"
 )]
 
+mod app_paths;
+
 mod commands;
 use commands::{create_time, get_projects, get_services, load_settings, start_timer, get_timer, stop_timer};
 
 mod menu;
+mod active_window_log;
 
 use std::sync::Mutex;
 use tauri::{WindowEvent, RunEvent, GlobalShortcutManager, Manager};
 
 pub struct AppState(pub Mutex<AppSettings>);
 
+// our app settings
 pub struct AppSettings {
   mite_app: String,
   api_key: String,
@@ -49,13 +53,15 @@ fn main() {
 
   #[cfg(target_os = "macos")]
   app.set_activation_policy(tauri::ActivationPolicy::Regular);
-  
 
   app.run(|app, e| match e {
+
     // Application is ready (triggered only once)
     RunEvent::Ready => {
-      let app_handle = app.clone();
+      active_window_log::start_logging();
 
+      let app_handle = app.clone();
+      
       app
         .global_shortcut_manager()
         .register("CmdOrCtrl+Shift+Comma", move || {

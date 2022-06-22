@@ -3,7 +3,7 @@
     <div class="timer">
       <span v-text="display"></span>
     </div>
-
+    <!-- TODO pause -->
     <div class="start-stop-btn">
       <a @click="start" class="btn">
         <play-icon class="btn" />
