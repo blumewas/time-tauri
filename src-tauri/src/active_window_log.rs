@@ -10,7 +10,7 @@ use std::path::Path;
 use crate::app_paths;
 // TODO give credit https://github.com/vn971/timeplot/blob/master/src/main.rs
 // logging interval in seconds
-static INTERVAL: u64 = 3;
+static INTERVAL: u64 = 15;
 
 // save current info
 struct ActiveWindow {
