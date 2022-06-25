@@ -58,7 +58,9 @@ fn main() {
 
     // Application is ready (triggered only once)
     RunEvent::Ready => {
-      active_window_log::start_logging();
+      unsafe {
+        active_window_log::start_logging();
+      }
 
       let app_handle = app.clone();
       

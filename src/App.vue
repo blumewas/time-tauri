@@ -11,48 +11,15 @@
 
       <app-timer />
 
-      <h1>
-        Projects
-      </h1>
+      <nav>
+        <a @click.prevent="view = 'projects'" :class="{'active': view === 'projects'}">Projects</a>
 
-      <div class="filter">
-        <h2 class="accordion-header" @click="showFilter = !showFilter">
-          Filter <chevron-up-icon class="open-accordion" :class="{ 'rotate': showFilter }" />
-        </h2>
-        
-        <div v-show="showFilter">
-          <div>
-            <input class="search" placeholder="Suche..." type="text" v-model="filter.search" @input="runFilter" />
-          </div>
+        <a @click.prevent="view = 'activity'" :class="{'active': view === 'activity'}">Activity</a>
+      </nav>
 
-          <div>
-            <label>
-              <input type="checkbox" v-model="filter.hideUnstared" />
-              Einträge ohne Stern ausblenden?
-            </label>
-          </div>
-        </div>
-      </div>
+      <projects-view v-show="view === 'projects'" :projects="projects" :stared="appSettings.stared" />
 
-      <div v-if="filter.result">
-        <mite-projects :customer-projects="filter.result"
-          :stared="appSettings.stared ?? []"
-          v-show="!filter.hideUnstared"
-        />
-      </div>
-      <div v-else>
-        <mite-projects
-          :customer-projects="staredProjects"
-          :stared="true"
-        />
-
-        <hr v-show="!filter.hideUnstared" />
-
-        <mite-projects :customer-projects="projects"
-          :stared="appSettings.stared ?? []"
-          v-show="!filter.hideUnstared"
-        />
-      </div>
+      <activity-log-view v-show="view === 'activity'"></activity-log-view>
     </div>
 
     <scroll-top-button />
@@ -65,9 +32,8 @@
 
 <script setup>
 import { computed, provide, ref, reactive } from 'vue';
-import { ChevronUpIcon } from '@heroicons/vue/outline';
 
-import MiteProjects from './components/mite-projects.vue';
+import ProjectsView from './views/projects-view.vue';
 
 import AppTimer from './components/app-timer.vue';
 import AppSettingsComponent from './components/app-settings.vue';
@@ -77,20 +43,17 @@ import AppNotifications from './components/app-notifications.vue';
 import { Mite } from './commands/mite';
 import { Util } from './helper/util';
 import { trigger } from './composeables/emit';
+import ActivityLogView from './views/activity-log-view.vue';
 
 
 // errorMessage
 const errorMsg = ref(false);
 
+// app view to display
+const view = ref ('projects');
+
 // our apps settings loaded from app folder
 const appSettings = reactive({});
-
-// filter hide unstared
-const filter = reactive({
-  hideUnstared: false,
-  search: '',
-  result: null,
-});
 
 // compute if settings are valid
 const hasValidSettings = computed(() => appSettings.apiKey !== '' && appSettings.miteApp !== '');
@@ -134,61 +97,6 @@ function load(settings) {
     errorMsg.value = error;
   });
   
-}
-
-// get stared projects
-const staredProjects = computed(() => {
-  return Object
-    .entries(projects.value)
-    .reduce((map, [customer, projects]) => {
-      
-      projects.forEach((project) => {
-
-        const { id, name } = project;
-
-        if (appSettings.stared.includes(id)) {
-          if (!map[customer]) {
-            map[customer] = [];
-          }
-
-          map[customer].push({ id, name });
-        }
-      });
-      
-      return map;
-    }, {});
-});
-
-const showFilter = ref(false);
-function runFilter() {
-  const {search} = filter;
-
-  // clear result if string is empty
-  if (!search || search === '') {
-    filter.result = null;
-    return;
-  }
-
-  // set our filter result if search has contents
-  const s = search.toLocaleLowerCase();
-  filter.result = Object.entries(projects.value).reduce((map, [customer, projects]) => {
-
-    // return all projects if the customer includes our search string
-    if (customer.toLowerCase().includes(s)) {
-      map[customer] = projects;
-
-      return map;
-    }
-
-    // filter projects
-    const filteredProjects = projects.filter((p) => p.name.toLowerCase().includes(s));
-    if (filteredProjects.length > 0) {
-      // if we have projects that match our search we put it along customer in map
-      map[customer] = filteredProjects;
-    }
-
-    return map;
-  }, {});
 }
 
 document.addEventListener('click', (event) => {
@@ -298,5 +206,23 @@ input[type=text].search {
 .btn[disabled] {
   color: #ccc;
   pointer-events: none;
+}
+
+nav {
+  font-size: 1.125rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+}
+
+nav a:hover {
+  cursor: pointer;
+  border-bottom: 1px solid #2c3e50;
+}
+
+nav a.active {
+  border-bottom: 1px solid #2c3e50;
 }
 </style>

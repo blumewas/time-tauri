@@ -8,9 +8,46 @@ use std::time::Duration;
 use std::path::Path;
 
 use crate::app_paths;
-
+// TODO give credit https://github.com/vn971/timeplot/blob/master/src/main.rs
 // logging interval in seconds
-static INTERVAL: u64 = 15;
+static INTERVAL: u64 = 3;
+
+// save current info
+struct ActiveWindow {
+  name: Option<String>,
+  log_count: u64,
+}
+
+impl ActiveWindow {
+  /**
+   * Check if the passed name is the current windows name
+   */
+  fn is(&self, other_name: String) -> bool {
+    self.name == Some(other_name)
+  }
+
+  /**
+   * Get log line
+   */
+  fn log_line(&self) -> String {
+    let passed_time = self.log_count * INTERVAL;
+    match &self.name {
+
+      Some(name) => format!("{}, {}s\n", name, passed_time),
+
+      None    => format!("\n")
+    }
+  }
+
+  fn incr_count(&mut self) {
+    self.log_count += 1;
+  }
+}
+
+static mut ACTIVE_WINDOW: ActiveWindow = ActiveWindow {
+  name: None,
+  log_count: 1,
+};
 
 #[cfg(target_os = "macos")]
 pub fn get_active_window() -> String {
@@ -26,30 +63,46 @@ pub fn get_active_window() -> String {
  * Start our logging thread
  */
 #[cfg(target_os = "macos")]
-pub fn start_logging() {
+pub unsafe fn start_logging() {
   init_logging_script();
 
   thread::spawn(|| {
     loop {
-      let mut win = get_active_window();
-
-    
       // remove new line
+      let mut win = get_active_window();
       trim_newline(&mut win);
-      win.push_str(format!(", {}s\n", INTERVAL).as_str());
 
-      let log_path = app_paths::activity_log_path().join(get_date_filename());
+      // check if name is empty
+      if ACTIVE_WINDOW.name == None {
+        ACTIVE_WINDOW.name = Some(String::from(&win));
+      }
 
-      // append new line to log path
-      let mut file = OpenOptions::new()
-        .write(true)
-        .append(true)
-        .create(true)
-        .open(log_path)
-        .unwrap();
+      // check if received window is same as current
+      if ACTIVE_WINDOW.is(String::from(&win)) {
+        
+        ACTIVE_WINDOW.incr_count();
 
-      write!(file, "{}", win)
-        .unwrap_or_else(|err| panic!("Failed to open or create file {:?}, {}", file, err));
+      } else {
+        // get log line
+        let log_line = ACTIVE_WINDOW.log_line();
+
+        let log_path = app_paths::activity_log_path().join(get_date_filename());
+
+        // append new line to log path
+        let mut file = OpenOptions::new()
+          .write(true)
+          .append(true)
+          .create(true)
+          .open(log_path)
+          .unwrap();
+
+        write!(file, "{}", log_line)
+          .unwrap_or_else(|err| panic!("Failed to open or create file {:?}, {}", file, err));
+
+        // re-init current window value
+        ACTIVE_WINDOW.name = Some(String::from(&win));
+        ACTIVE_WINDOW.log_count = 1;
+      }
 
       // sleep x secs
       thread::sleep(Duration::from_secs(INTERVAL));
