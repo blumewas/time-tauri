@@ -12,9 +12,26 @@
       <span v-if="entries.length === 0">No log found for the selected date</span>
 
       <div v-else>
-        <activity-table :entries="entries"></activity-table>
+        <div>
+          <label>
+            <input type="radio" v-model="mode" value="app" name="mode" />
+            App
+          </label>
 
-        <activity-chart :entries="entries"></activity-chart>
+          <label>
+            <input type="radio" v-model="mode" value="window" name="mode" />
+            Window
+          </label>
+
+          <label>
+            <input type="radio" v-model="mode" value="log" name="mode" />
+            Log
+          </label>
+        </div>
+
+        <activity-table :entries="entries" :mode="mode"></activity-table>
+
+        <activity-chart :entries="entries" v-show="mode === 'app'"></activity-chart>
       </div>
     </div>
   </div>
@@ -29,6 +46,8 @@ import ActivityTable from '@/components/activity-log/activity-table.vue';
 const selectedDate = ref('');
 
 const entries = ref([]);
+
+const mode = ref('app');
 
 watch(selectedDate, (newSelect) => {
 

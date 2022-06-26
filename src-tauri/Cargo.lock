@@ -2777,7 +2777,7 @@ dependencies = [
 
 [[package]]
 name = "time_tauri"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "chrono",
  "run_script",

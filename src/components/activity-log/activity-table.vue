@@ -1,16 +1,5 @@
 <template>
   <div>
-    <div>
-      <label>
-        <input type="radio" v-model="mode" value="app" name="mode" />
-        App
-      </label>
-
-      <label>
-        <input type="radio" v-model="mode" value="window" name="mode" />
-        Window
-      </label>
-    </div>
     <table>
       <thead>
         <tr>
@@ -23,12 +12,12 @@
       <tbody v-if="mode === 'app'">
         <tr v-for="(row, index) in rows" :key="index" >
           <td>{{ row.app }}</td>
-          <td>{{ row.view }}</td>
+          <td>{{ row.window }}</td>
           <td>{{ row.time }}</td>
         </tr>
       </tbody>
 
-      <tbody v-else>
+      <tbody v-else-if="mode === 'window'">
         <template v-for="[app, value] in Object.entries(rows)" :key="app" >
           <tr v-for="v in value" :key="v.window">
             <td>{{ app }}</td>
@@ -37,39 +26,57 @@
           </tr>
         </template>
       </tbody>
+
+      <tbody v-else-if="mode === 'log'">
+        <tr v-for="(row, index) in entryRows" :key="index" >
+          <td>{{ row.app }}</td>
+          <td>{{ row.window }}</td>
+          <td>{{ dayjs.duration(row.time, 'seconds').format('mm:ss') }}</td>
+        </tr>
+      </tbody>
     </table>
   </div>
 </template>
 
 <script setup>
 import { ActivityLog } from '@/helper/activity-log';
-import { ref, computed, defineProps } from 'vue';
+import { computed, defineProps } from 'vue';
 
 import duration from 'dayjs/plugin/duration';
 import dayjs from 'dayjs';
 
 dayjs.extend(duration);
 
-const props = defineProps(['entries']);
+const props = defineProps(['entries', 'mode']);
 
-const mode = ref('app');
+const entryRows = computed(() => {
+  return props.entries.map((entry) => {
+    const { app, window, time } = entry;
+      const t = Number.parseInt(time.replace('s', ''), 10);
+
+    return {
+      app,
+      window,
+      time: t,
+    };
+  });
+});
 
 const rows = computed(() => {
-  if (mode.value === 'app') {
+  if (props.mode === 'app') {
     return Object.entries(ActivityLog.groupByApp(props.entries))
       .map(([app, value]) => {
         return {
           app,
-          view: '-',
+          window: '-',
           time: dayjs.duration(value.total, 'seconds').format('HH:mm:ss'),
         }
       });
   }
 
   // group by app & view
-  return props.entries.reduce((rows, entry) => {
+  return entryRows.value.reduce((rows, entry) => {
     const { app, window, time } = entry;
-      const t = Number.parseInt(time.replace('s', ''), 10);
 
       if (!rows[app]) {
         rows[app] = [];
@@ -81,13 +88,13 @@ const rows = computed(() => {
         rows[app].push({
           app,
           window,
-          time: t,
+          time,
         });
 
         return rows;
       }
 
-      rowentry.time += t;
+      rowentry.time += time;
 
       return rows;
   }, {});
