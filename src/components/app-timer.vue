@@ -18,7 +18,7 @@
 <script setup>
 import { Mite } from '@/commands/mite';
 import { trigger, useOn } from '@/composeables/emit';
-import { computed, onMounted, ref, reactive } from 'vue';
+import { computed, ref, reactive } from 'vue';
 import { PlayIcon, StopIcon } from '@heroicons/vue/solid';
 import { minutesAsString } from '@/helper/time-helper';
 
@@ -73,8 +73,14 @@ function stop() {
  */
 function refresh() {
   Mite.getTimer()
-    .then(({tracker}) => {
-      const { tracking_time_entry } = tracker;
+    .then((result) => {
+
+      if (!result) {
+        return;
+      }
+
+
+      const { tracking_time_entry } = result.tracker;
 
       timer.value = tracking_time_entry ?? {};
 
@@ -103,6 +109,14 @@ useOn('started-timer', (tracker) => {
 
   timer.value = tracking_time_entry ?? {};
 
+  stopWatch.display = minutesAsString(timer.value.minutes);
+
+  startInterval();
+});
+
+useOn('loaded-settings', () => {
+  refresh();
+
   startInterval();
 });
 
@@ -113,12 +127,6 @@ function startInterval() {
   // get timer every 60 seconds and re new the display
   stopWatch.interval = window.setInterval(refresh, 60 * 1000);
 }
-
-onMounted(() => {
-  refresh();
-
-  startInterval();
-});
 </script>
 
 <style scoped>

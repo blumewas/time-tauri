@@ -92,6 +92,8 @@ function load(settings) {
 
     projects.value = Util.groupBy(_projects, 'customer_name');
     services.value = _services;
+
+    trigger('loaded-settings');
   })
   .catch((error) => {
     errorMsg.value = error;

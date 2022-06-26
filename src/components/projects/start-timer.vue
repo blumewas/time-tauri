@@ -32,7 +32,7 @@ function start(event, serviceId = null) {
 
   Mite.startTimer(props.projectId, serviceId)
     .then(({ tracker }) => {
-      trigger('notify', 'Timer gestartet');
+      trigger('notify', 'Timer started');
 
       showServiceDropdown.value = false;
 

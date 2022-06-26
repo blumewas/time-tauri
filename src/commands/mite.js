@@ -100,12 +100,28 @@ export class Mite {
 
       return data;
     } catch (error) {
-      // parse error we get form tauri
-      const err = JSON.parse(error);
-      throw new Error(err.error);
+      // check if we have content
+      if (!error) {
+        return;
+      }
+
+      if (this.isJson(error)) {
+        // parse error we get form tauri
+        const err = JSON.parse(error);
+        throw new Error(err.error);
+      }
+      
+      throw error;
     }
   }
 
-  
+  static isJson(str) {
+    try {
+      JSON.parse(str);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  }
 
 }
